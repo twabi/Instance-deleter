@@ -113,11 +113,12 @@ const App = (props) => {
     setSelectedProgram(selectedOption);
   };
 
-  const deleteEnrolment = (enrol) => {
+  const deleteInstance = (enrol) => {
 
-    var enrolID = enrol.enrollment;
+    var enrolID = enrol.trackedEntityInstance;
+    var name = enrol.attributes[1].value;
     console.log(enrolID);
-    fetch(`https://ccdev.org/chistest/api/enrollments/${enrolID}`, {
+    fetch(`https://www.namis.org/main/api/trackedEntityInstances/${enrolID}`, {
       method: 'DELETE',
       headers: {
         'Authorization' : basicAuth,
@@ -129,18 +130,18 @@ const App = (props) => {
         .then(response => response.json())
         .then((result) => {
           console.log(result);
-          setSummary(summary => [...summary, {"enrolment": enrolID, "message" : "Successfully deleted"}]);
+          setSummary(summary => [...summary, {"instance": enrolID, "name" : name, "message" : "Successfully deleted"}]);
 
         })
         .catch((error) => {
-          setSummary(summary => [...summary, {"enrolment": enrolID, "message" : "Unable to delete due to an error" + error}]);
+          setSummary(summary => [...summary, {"instance": enrolID, "name" : name, "message" : "Unable to delete due to an error" + error}]);
 
         });
   }
 
   const functionWithPromise = enrol => { //a function that returns a promise
 
-    deleteEnrolment(enrol);
+    deleteInstance(enrol);
     return message;
   }
 
@@ -164,33 +165,33 @@ const App = (props) => {
     if(flattenedUnits.length !== 0  && selectedProgram.length !== 0){
       var programID = selectedProgram;
 
-      var enrollments = [];
+      var instances = [];
 
       flattenedUnits.map((unit, index) => {
         getInstance()
             .then((d2) => {
-              const endpoint = `enrollments.json?ou=${unit.id}&program=${programID}&fields=enrollment`;
+              const endpoint = `trackedEntityInstances.json?ou=${unit.id}&program=${programID}`;
               d2.Api.getApi().get(endpoint)
                   .then((response) => {
-                    console.log(response.enrollments);
-                    enrollments = enrollments.concat(response.enrollments);
+                    console.log(response.trackedEntityInstances);
+                    instances = instances.concat(response.trackedEntityInstances);
                     //setEnrolArray(enrolArray => [...enrolArray, response.enrollments]);
                   })
                   .then(() => {
-                    console.log(enrollments);
-                    if(enrollments.length == 0){
+                    console.log(instances);
+                    if(instances.length === 0){
                       setMessage("Alert");
                       setMessageBody("Unable to delete! No enrolments found for the chosen program or orgUnit.");
                       toggleAlert();
                     }
-                    deleteData(enrollments).then((r) =>{
+                    deleteData(instances).then((r) =>{
                       setShowLoading(false);
                       setShowLoad(false)
                       console.log(index, flattenedUnits.length);
                       //setShowLoad(false);
                       summary.length === 0 && index < flattenedUnits.length-3 ? setShowLoad(true) : setShowLoad(false);
                       setMessage("Operation Complete");
-                      setMessageBody("A summary of enrolments delete operation: ");
+                      setMessageBody("A summary of Instances delete operation: ");
                       toggleAlert();
                     }).catch((err) => {
                       console.log("an error occurred: " + err);
@@ -206,7 +207,7 @@ const App = (props) => {
 
     } else {
       console.log("things are null");
-      alert("fields cannot be left empty!!")
+      alert("fields cannot be left empty!!");
     }
 
 
@@ -250,11 +251,11 @@ const App = (props) => {
             <MDBCard display="flex" justifyContent="center" className="text-xl-center w-100">
               <MDBCardBody>
                 <MDBCardTitle>
-                  <strong>Delete Enrolments</strong>
+                  <strong>Delete Tracked Entity Instances</strong>
                 </MDBCardTitle>
 
                 <MDBCardText>
-                  <strong>Select Enrolment Program and Org Unit(s)</strong>
+                  <strong>Select instance Program and Org Unit(s)</strong>
                 </MDBCardText>
 
                 {programs.length == 0 ? <div className="spinner-border mx-2 indigo-text spinner-border-sm" role="status">
@@ -265,7 +266,7 @@ const App = (props) => {
                   <MDBModal isOpen={modal} toggle={toggle} centered>
                     <MDBModalHeader toggle={toggle}>Confirmation</MDBModalHeader>
                     <MDBModalBody>
-                      All the enrollments for the chosen orgUnit(and it's children) will be deleted.
+                      All the Instances for the chosen orgUnit(and it's children-enrollments and event) will be deleted.
                       Are you sure you want to delete?
                     </MDBModalBody>
                     <MDBModalFooter>
@@ -285,7 +286,7 @@ const App = (props) => {
 
                       {summary.map((item) => (
                           <MDBCard className="border-dark my-1">
-                            <p>Enrolment: {item.enrolment}</p>
+                            <p>Instance: {item.name}</p>
                             <p>message: {item.message}</p>
                           </MDBCard>
 
@@ -295,7 +296,7 @@ const App = (props) => {
                         <p className="font-italic">Loading</p>
                         <Spin size="large" />
                       </div> : summary.length === 0 ?<div>
-                        <p>Found no enrolments to delete</p>
+                        <p>Found no instances to delete</p>
                       </div> : null}
 
                     </MDBModalBody>
@@ -392,7 +393,7 @@ const App = (props) => {
                     setSummary([])
                     toggle();
                   }}>
-                    Delete Enrolments{showLoading ? <div className="spinner-border mx-2 text-white spinner-border-sm" role="status">
+                    Delete Instances{showLoading ? <div className="spinner-border mx-2 text-white spinner-border-sm" role="status">
                     <span className="sr-only">Loading...</span>
                   </div> : null}
                   </MDBBtn>
